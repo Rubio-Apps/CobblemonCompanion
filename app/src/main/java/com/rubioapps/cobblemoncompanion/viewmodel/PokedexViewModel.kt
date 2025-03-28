@@ -41,21 +41,13 @@ class PokedexViewModel @Inject constructor(
     val pokedexState: State<PokedexUiState> = _pokedexState
 
     private var userData: CobblemonData? = null
-    private var initialLoadCompleted = false
     private val tag = "PokedexViewModel" // Tag para logs de error/warning
 
     init {
-        // Carga inicial solo una vez
-        if (!initialLoadCompleted) {
             loadInitialPokedex()
-        }
     }
 
     private fun loadInitialPokedex() {
-        if (initialLoadCompleted) {
-            // Log.w(TAG, "loadInitialPokedex called again, but already completed. Ignoring.") // Log opcional
-            return
-        }
         viewModelScope.launch {
             _pokedexState.value = PokedexUiState.Loading
             try {
@@ -63,7 +55,6 @@ class PokedexViewModel @Inject constructor(
                 if (allSpeciesData.isEmpty()) {
                     Log.e(tag, "Failed to load species data from repository.")
                     _pokedexState.value = PokedexUiState.Error("No se pudieron cargar los datos de las especies.")
-                    initialLoadCompleted = true // Marcar completado para no reintentar
                     return@launch
                 }
 
@@ -79,7 +70,6 @@ class PokedexViewModel @Inject constructor(
                     displayedEntries = initialAllEntries,
                     selectedGeneration = null
                 )
-                initialLoadCompleted = true
                 _pokedexState.value = initialState
 
                 // Aplica datos de usuario si existían previamente
@@ -88,7 +78,6 @@ class PokedexViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(tag, "Error during initial pokedex load", e)
                 _pokedexState.value = PokedexUiState.Error("Error carga inicial: ${e.localizedMessage}")
-                initialLoadCompleted = true
             }
         }
     }
