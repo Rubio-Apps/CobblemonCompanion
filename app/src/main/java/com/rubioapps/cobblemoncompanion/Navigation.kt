@@ -5,6 +5,8 @@ object AppDestinations {
     const val POKEDEX_ROUTE = "pokedex"
     const val CHATBOT_ROUTE = "chatbot"
     const val SETTINGS_ROUTE = "settings"
-    // Podríamos añadir rutas para detalles, etc. más adelante
-    // const val POKEMON_DETAIL_ROUTE = "pokemon_detail"
+    // Nueva ruta con argumento {pokemonName}
+    const val POKEMON_DETAIL_ROUTE = "pokemon_detail/{pokemonName}"
+    // Helper para construir la ruta con el nombre
+    fun pokemonDetailRoute(pokemonName: String) = "pokemon_detail/$pokemonName"
 }

@@ -7,9 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.rubioapps.cobblemoncompanion.MainActivity // Solo si necesitas la función RequestPermissionComposable aquí
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.rubioapps.cobblemoncompanion.viewmodel.PokedexViewModel // Para llamar a processUserJson
 
 @Composable
 fun SettingsScreen(

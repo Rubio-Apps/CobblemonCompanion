@@ -6,6 +6,7 @@ import com.google.gson.annotations.SerializedName
 data class SpeciesData(
     val name: String,
     val nationalPokedexNumber: Int,
+    val generation: Int,
     val primaryType: String,
     val secondaryType: String?, // Puede ser nulo
     val abilities: List<String>, // O una clase Ability si tiene más datos
