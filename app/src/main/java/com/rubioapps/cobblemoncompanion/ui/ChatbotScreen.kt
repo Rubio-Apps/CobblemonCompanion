@@ -18,73 +18,84 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.rubioapps.cobblemoncompanion.model.ChatMessage
 import com.rubioapps.cobblemoncompanion.viewmodel.ChatbotViewModel
 import kotlinx.coroutines.launch
-import androidx.compose.material3.CircularProgressIndicator // Para el loading
-import com.rubioapps.cobblemoncompanion.viewmodel.PokedexViewModel // Importar PokedexViewModel
-import com.rubioapps.cobblemoncompanion.viewmodel.PokedexUiState // Importar PokedexUiState
+import androidx.compose.material3.CircularProgressIndicator
+import com.rubioapps.cobblemoncompanion.viewmodel.PokedexViewModel
 
 @Composable
 fun ChatbotScreen(
-    viewModel: ChatbotViewModel = hiltViewModel() // Obtiene el ChatbotViewModel
+    // Recibe la instancia de PokedexViewModel del NavHost
+    pokedexViewModel: PokedexViewModel,
+    // Obtiene su propio ChatbotViewModel usando Hilt
+    viewModel: ChatbotViewModel = hiltViewModel()
 ) {
-    // --- Obtener PokedexViewModel para leer su estado ---
-    val pokedexViewModel: PokedexViewModel = hiltViewModel()
+    // Lee el estado de Pokedex reactivamente desde el ViewModel pasado
     val pokedexState by pokedexViewModel.pokedexState
-    // --- Fin obtener PokedexViewModel ---
 
+    // Lee el estado del Chatbot reactivamente
     val uiState by viewModel.uiState
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-
-    // Hacer scroll al final cuando se añaden mensajes
+    // Efecto para hacer scroll automático al final cuando llegan nuevos mensajes
     LaunchedEffect(uiState.messages.size) {
         if (uiState.messages.isNotEmpty()) {
-            listState.animateScrollToItem(uiState.messages.size - 1)
+            coroutineScope.launch { // Asegúrate de lanzar corutina para animateScrollToItem
+                listState.animateScrollToItem(uiState.messages.size - 1)
+            }
         }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
+        // Lista de mensajes
         LazyColumn(
             state = listState,
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = 8.dp)
+            modifier = Modifier
+                .weight(1f) // Ocupa el espacio disponible
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp), // Espacio entre burbujas
+            contentPadding = PaddingValues(bottom = 8.dp) // Espacio al final
         ) {
             items(uiState.messages, key = { it.id }) { message ->
                 ChatMessageBubble(message = message)
             }
+            // Muestra el indicador de carga si el ViewModel está ocupado
             if (uiState.isLoading) {
-                item { /* ... Indicador de carga ... */ }
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                }
             }
         }
 
+        // Fila para el campo de texto y el botón de enviar
         Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = { Text("Escribe tu pregunta...") },
-                modifier = Modifier.weight(1f),
-                maxLines = 3
+                modifier = Modifier.weight(1f), // Ocupa el espacio restante
+                maxLines = 3 // Permite hasta 3 líneas antes de hacer scroll
             )
             Spacer(modifier = Modifier.width(8.dp))
             IconButton(
                 onClick = {
-                    // --- Extraer contexto y pasar a sendMessage ---
-                    var capturedCount: Int? = null
-                    var totalCount: Int? = null
-                    if (pokedexState is PokedexUiState.Success) {
-                        val successState = pokedexState as PokedexUiState.Success
-                        capturedCount = successState.allEntries.count { it.userEntry.captured }
-                        totalCount = successState.allEntries.size
+                    if (inputText.isNotBlank()) {
+                        // Pasa el texto y el ESTADO ACTUAL de Pokedex al ViewModel
+                        viewModel.sendMessage(inputText, pokedexState) // Llama a la versión correcta
+                        inputText = "" // Limpia el campo
                     }
-                    viewModel.sendMessage(inputText, capturedCount, totalCount)
-                    // --- Fin extraer contexto ---
-                    inputText = ""
                 },
+                // El botón se deshabilita si no hay texto o si el bot está cargando
                 enabled = inputText.isNotBlank() && !uiState.isLoading
             ) {
                 Icon(Icons.Filled.Send, contentDescription = "Enviar mensaje")
@@ -93,27 +104,27 @@ fun ChatbotScreen(
     }
 }
 
-
-// Composable para mostrar una burbuja de mensaje
+// Composable para la burbuja de chat (sin cambios)
 @Composable
 fun ChatMessageBubble(message: ChatMessage) {
+    // ... (código de la burbuja sin cambios) ...
     val backgroundColor = if (message.isFromUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val alignment = if (message.isFromUser) Alignment.CenterEnd else Alignment.CenterStart
 
     Box(
         modifier = Modifier
-            .fillMaxWidth() // Ocupa todo el ancho para alinear la burbuja
+            .fillMaxWidth()
             .padding(
-                start = if (message.isFromUser) 40.dp else 0.dp, // Margen izquierdo si es del usuario
-                end = if (message.isFromUser) 0.dp else 40.dp // Margen derecho si es del bot
+                start = if (message.isFromUser) 40.dp else 0.dp,
+                end = if (message.isFromUser) 0.dp else 40.dp
             )
     ) {
         Text(
             text = message.text,
             modifier = Modifier
-                .align(alignment) // Alinea la burbuja
+                .align(alignment)
                 .clip(
-                    RoundedCornerShape( // Esquinas redondeadas
+                    RoundedCornerShape(
                         topStart = 16.dp,
                         topEnd = 16.dp,
                         bottomStart = if (message.isFromUser) 16.dp else 0.dp,
@@ -121,7 +132,7 @@ fun ChatMessageBubble(message: ChatMessage) {
                     )
                 )
                 .background(backgroundColor)
-                .padding(horizontal = 12.dp, vertical = 8.dp) // Padding interno
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         )
     }
 }

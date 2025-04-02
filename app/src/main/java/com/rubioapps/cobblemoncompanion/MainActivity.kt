@@ -154,27 +154,28 @@ fun CobblemonCompanionApp(
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable(AppDestinations.POKEDEX_ROUTE) {
-                    // Pasa la instancia del ViewModel y la lambda de clic
                     PokedexScreen(
                         uiState = pokedexViewModel.pokedexState.value,
-                        viewModel = pokedexViewModel,
+                        viewModel = pokedexViewModel, // Pasa la instancia única
                         onPokemonClick = { pokemonName ->
                             navController.navigate(AppDestinations.pokemonDetailRoute(pokemonName))
                         }
                     )
                 }
                 composable(AppDestinations.CHATBOT_ROUTE) {
-                    ChatbotScreen() // Obtendrá su propio ViewModel más adelante
+                    // --- ASEGÚRATE DE PASAR EL VIEWMODEL AQUÍ ---
+                    ChatbotScreen(
+                        pokedexViewModel = pokedexViewModel // Pasa la misma instancia que PokedexScreen
+                    )
+                    // --- FIN ASEGURAR ---
                 }
                 composable(AppDestinations.SETTINGS_ROUTE) {
-                    // Pasa la función lambda para importar
-                    SettingsScreen(onRequestImport = onRequestImport)
+                    SettingsScreen(onRequestImport = onRequestImport) // Pasa la acción
                 }
                 composable(
                     route = AppDestinations.POKEMON_DETAIL_ROUTE,
                     arguments = listOf(navArgument("pokemonName") { type = NavType.StringType })
                 ) {
-                    // PokemonDetailScreen obtiene su ViewModel con hiltViewModel() internamente
                     PokemonDetailScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
