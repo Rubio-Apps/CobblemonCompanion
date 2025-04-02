@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -15,6 +17,10 @@ android {
     namespace = "com.rubioapps.cobblemoncompanion"
     compileSdk = 35
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.rubioapps.cobblemoncompanion"
         minSdk = 26
@@ -26,6 +32,18 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        // Cargar las propiedades de local.properties
+        val localProperties = Properties()
+        val localPropertiesFile = rootProject.file("local.properties")
+
+        if (localPropertiesFile.exists()) {
+            localPropertiesFile.reader(Charsets.UTF_8).use { reader ->
+                localProperties.load(reader)
+            }
+        }
+
+        // Crear una variable en BuildConfig
+        buildConfigField("String", "GEMINI_API_KEY", "\"${localProperties.getProperty("GEMINI_API_KEY", "")}\"")
     }
 
     buildTypes {
@@ -92,4 +110,10 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.coil.compose)
+
+    // SDK de IA Generativa de Google (Gemini)
+    implementation(libs.generativeai) // Revisa la última versión
+
+    // Necesitarás coroutines si aún no las tienes explícitamente
+    implementation(libs.kotlinx.coroutines.android) // O la versión que uses
 }
